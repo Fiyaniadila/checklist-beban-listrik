@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan Prediksi Beban Listrik — GI Sei Raya</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f5f0;
+  --surface: #ffffff;
+  --surface2: #f0ede6;
+  --border: rgba(0,0,0,0.07);
+  --border2: rgba(0,0,0,0.12);
+  --text: #2d2a24;
+  --muted: #9b9488;
+  --accent: #7c9e87;
+  --accent-light: #e8f0eb;
+  --lavender: #9b8ec4;
+  --lavender-light: #eeebf7;
+  --amber: #c49b4a;
+  --amber-light: #faf0dc;
+  --coral: #c47a6a;
+  --coral-light: #faeae7;
+  --blue: #6a8fc4;
+  --blue-light: #e7eef8;
+  --cream: #f0ece3;
+  --font-head: 'Syne', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-head); min-height: 100vh; padding: 2rem 1rem 4rem; }
+.page { max-width: 680px; margin: 0 auto; }
+
+.hero { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border2); }
+.hero-label { font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; }
+.hero-title { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.2; margin-bottom: 6px; }
+.hero-sub { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.hero-sub span { color: var(--text); font-weight: 500; }
+
+.overall { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; padding: 16px 20px; margin-bottom: 12px; }
+.overall-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.overall-label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.overall-pct { font-size: 28px; font-weight: 700; color: var(--accent); }
+.bar { height: 8px; background: var(--accent-light); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+
+.stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 1.5rem; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.stat-val { font-size: 22px; font-weight: 700; color: var(--text); }
+.stat-val.accent { color: var(--accent); }
+.stat-label { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+.phase { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; overflow: hidden; transition: border-color 0.2s; }
+.phase:hover { border-color: var(--border2); }
+.phase-header { padding: 14px 18px; cursor: pointer; user-select: none; }
+.phase-header:hover { background: var(--surface2); }
+.phase-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.phase-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.phase-title { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.phase-date { font-family: var(--font-mono); font-size: 10px; color: var(--muted); background: var(--cream); padding: 3px 8px; border-radius: 20px; }
+.pri { font-family: var(--font-mono); font-size: 10px; padding: 2px 8px; border-radius: 6px; }
+.pri-critical { background: var(--coral-light); color: var(--coral); }
+.pri-high { background: var(--amber-light); color: var(--amber); }
+.pri-medium { background: var(--blue-light); color: var(--blue); }
+.phase-est { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-left: auto; }
+.phase-chev { font-size: 12px; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+.phase-chev.open { transform: rotate(180deg); }
+.phase-progress { display: flex; align-items: center; gap: 10px; }
+.phase-bar { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.phase-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+.phase-pct { font-family: var(--font-mono); font-size: 10px; color: var(--muted); min-width: 30px; text-align: right; }
+
+.tasks { border-top: 1px solid var(--border); }
+.task { display: flex; align-items: flex-start; gap: 12px; padding: 11px 18px; border-bottom: 1px solid var(--border); transition: background 0.15s; cursor: pointer; }
+.task:last-child { border-bottom: none; }
+.task:hover { background: var(--surface2); }
+.task.done .task-text { color: var(--muted); text-decoration: line-through; }
+.task.done .task-note { opacity: 0.5; }
+.chk { width: 18px; height: 18px; border: 1.5px solid var(--border2); border-radius: 5px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; background: var(--surface); }
+.chk:hover { border-color: var(--accent); }
+.chk.checked { background: var(--accent); border-color: var(--accent); }
+.chk.checked::after { content: ""; width: 9px; height: 6px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translateY(-1px); display: block; }
+.task-body { flex: 1; }
+.task-top { display: flex; align-items: flex-start; gap: 8px; }
+.task-text { font-size: 13px; color: var(--text); line-height: 1.4; flex: 1; font-weight: 500; }
+.task-note { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+.tag { font-family: var(--font-mono); font-size: 10px; padding: 2px 7px; border-radius: 5px; white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
+.tdata { background: var(--accent-light); color: var(--accent); }
+.tcode { background: var(--lavender-light); color: var(--lavender); }
+.tmodel { background: var(--amber-light); color: var(--amber); }
+.tout { background: var(--blue-light); color: var(--blue); }
+
+.note-box { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 0 12px 12px 0; padding: 12px 16px; margin-top: 1rem; font-family: var(--font-mono); font-size: 12px; color: var(--muted); line-height: 1.7; }
+.note-box strong { color: var(--text); display: block; margin-bottom: 4px; font-family: var(--font-head); font-size: 13px; font-weight: 600; }
+
+@media (max-width: 480px) {
+  .stats { grid-template-columns: repeat(2,1fr); }
+  .hero-title { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="hero">
+  <div class="hero-label">Project Checklist</div>
+  <div class="hero-title">Prediksi Beban Listrik<br>GI Sei Raya</div>
+  <div class="hero-sub">Model: <span>XGBoost</span> &nbsp;·&nbsp; Target MAPE: <span>&lt; 5%</span> &nbsp;·&nbsp; Deadline: <span>6 Juni 2026</span></div>
+</div>
+
+<div class="overall">
+  <div class="overall-row">
+    <span class="overall-label">progress keseluruhan</span>
+    <span class="overall-pct" id="overall-pct">0%</span>
+  </div>
+  <div class="bar"><div class="bar-fill" id="overall-fill" style="width:0%"></div></div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-val accent" id="s-done">0</div><div class="stat-label">selesai</div></div>
+  <div class="stat"><div class="stat-val" id="s-left">24</div><div class="stat-label">tersisa</div></div>
+  <div class="stat"><div class="stat-val">5</div><div class="stat-label">fase</div></div>
+  <div class="stat"><div class="stat-val">6 Jun</div><div class="stat-label">deadline</div></div>
+</div>
+
+<div class="phase" id="ph1">
+  <div class="phase-header" onclick="togglePhase('ph1')">
+    <div class="phase-top">
+      <div class="phase-dot" style="background:var(--accent)"></div>
+      <span class="phase-title">Cleaning & merge data</span>
+      <span class="phase-date">1 Juni</span>
+      <span class="pri pri-critical">wajib</span>
+      <span class="phase-est">~3–4 jam</span>
+      <span class="phase-chev open" id="chev-ph1">&#8964;</span>
+    </div>
+    <div class="phase-progress">
+      <div class="phase-bar"><div class="phase-fill" id="fill-ph1" style="width:0%;background:var(--accent)"></div></div>
+      <span class="phase-pct" id="pct-ph1">0%</span>
+    </div>
+  </div>
+  <div class="tasks" id="tasks-ph1">
+    <div class="task" id="t1-1" onclick="check('t1-1','ph1')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Potong data beban mulai 1 Jan 2022</span><span class="tag tdata">data</span></div><div class="task-note">sesuaikan dengan rentang data cuaca yang tersedia</div></div></div>
+    <div class="task" id="t1-2" onclick="check('t1-2','ph1')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Nilai negatif &lt; -5 MW → NaN</span><span class="tag tdata">data</span></div><div class="task-note">khususnya TRF2 yang ada -26.65 pada 27 Juli 2023</div></div></div>
+    <div class="task" id="t1-3" onclick="check('t1-3','ph1')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Nilai negatif kecil → abs()</span><span class="tag tdata">data</span></div><div class="task-note">TRF1 max -0.79, TRF2 beberapa -0.87, TRF3 max -0.10</div></div></div>
+    <div class="task" id="t1-4" onclick="check('t1-4','ph1')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Interpolasi missing values (method='time')</span><span class="tag tcode">kode</span></div><div class="task-note">TRF2: 56 baris, TRF3: 40 baris</div></div></div>
+    <div class="task" id="t1-5" onclick="check('t1-5','ph1')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Load & merge data cuaca berdasarkan datetime</span><span class="tag tcode">kode</span></div><div class="task-note">hasil: 70.126 baris, semua kolom cuaca lengkap</div></div></div>
+    <div class="task" id="t1-6" onclick="check('t1-6','ph1')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Simpan data_clean_merged.csv</span><span class="tag tcode">kode</span></div><div class="task-note">fondasi semua tahap berikutnya</div></div></div>
+  </div>
+</div>
+
+<div class="phase" id="ph2">
+  <div class="phase-header" onclick="togglePhase('ph2')">
+    <div class="phase-top">
+      <div class="phase-dot" style="background:var(--lavender)"></div>
+      <span class="phase-title">Feature engineering</span>
+      <span class="phase-date">2 Juni</span>
+      <span class="pri pri-critical">wajib</span>
+      <span class="phase-est">~3–4 jam</span>
+      <span class="phase-chev" id="chev-ph2">&#8964;</span>
+    </div>
+    <div class="phase-progress">
+      <div class="phase-bar"><div class="phase-fill" id="fill-ph2" style="width:0%;background:var(--lavender)"></div></div>
+      <span class="phase-pct" id="pct-ph2">0%</span>
+    </div>
+  </div>
+  <div class="tasks" id="tasks-ph2" style="display:none">
+    <div class="task" id="t2-1" onclick="check('t2-1','ph2')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Fitur lag beban: t-1, t-2, t-48, t-336</span><span class="tag tcode">kode</span></div><div class="task-note">paling penting — kerjakan ini dulu sebelum fitur lain</div></div></div>
+    <div class="task" id="t2-2" onclick="check('t2-2','ph2')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Fitur waktu: jam, hari, bulan, is_weekend, is_holiday</span><span class="tag tcode">kode</span></div><div class="task-note">pakai library holidays untuk hari libur Indonesia</div></div></div>
+    <div class="task" id="t2-3" onclick="check('t2-3','ph2')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Fitur rolling mean: 24 jam & 1 minggu</span><span class="tag tcode">kode</span></div></div></div>
+    <div class="task" id="t2-4" onclick="check('t2-4','ph2')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Fitur cuaca: suhu, kelembaban, angin, radiasi, cloud cover</span><span class="tag tdata">data</span></div></div></div>
+    <div class="task" id="t2-5" onclick="check('t2-5','ph2')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Drop NaN & simpan data_features.csv</span><span class="tag tcode">kode</span></div><div class="task-note">wajar kehilangan ~336 baris pertama karena lag 1 minggu</div></div></div>
+  </div>
+</div>
+
+<div class="phase" id="ph3">
+  <div class="phase-header" onclick="togglePhase('ph3')">
+    <div class="phase-top">
+      <div class="phase-dot" style="background:var(--amber)"></div>
+      <span class="phase-title">Bangun & validasi model (prototype TRF1)</span>
+      <span class="phase-date">3 Juni</span>
+      <span class="pri pri-critical">wajib</span>
+      <span class="phase-est">~4–5 jam</span>
+      <span class="phase-chev" id="chev-ph3">&#8964;</span>
+    </div>
+    <div class="phase-progress">
+      <div class="phase-bar"><div class="phase-fill" id="fill-ph3" style="width:0%;background:var(--amber)"></div></div>
+      <span class="phase-pct" id="pct-ph3">0%</span>
+    </div>
+  </div>
+  <div class="tasks" id="tasks-ph3" style="display:none">
+    <div class="task" id="t3-1" onclick="check('t3-1','ph3')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Split: train 2022–2024, test 2025 (time-series split)</span><span class="tag tmodel">model</span></div><div class="task-note">jangan pakai train_test_split biasa — bisa data leakage</div></div></div>
+    <div class="task" id="t3-2" onclick="check('t3-2','ph3')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Training XGBoost di TRF1 sebagai prototype</span><span class="tag tmodel">model</span></div><div class="task-note">n_estimators=300, learning_rate=0.05, max_depth=6</div></div></div>
+    <div class="task" id="t3-3" onclick="check('t3-3','ph3')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Evaluasi MAE, RMSE, MAPE di data test 2025</span><span class="tag tmodel">model</span></div></div></div>
+    <div class="task" id="t3-4" onclick="check('t3-4','ph3')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Plot grafik aktual vs prediksi 2 minggu sample</span><span class="tag tout">output</span></div><div class="task-note">kalau grafik mengikuti pola, lanjut ke semua trafo</div></div></div>
+    <div class="task" id="t3-5" onclick="check('t3-5','ph3')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Cek feature importance — lag t-48 & t-336 harus masuk top 5</span><span class="tag tmodel">model</span></div></div></div>
+  </div>
+</div>
+
+<div class="phase" id="ph4">
+  <div class="phase-header" onclick="togglePhase('ph4')">
+    <div class="phase-top">
+      <div class="phase-dot" style="background:var(--blue)"></div>
+      <span class="phase-title">Loop semua trafo + output lengkap</span>
+      <span class="phase-date">4–5 Juni</span>
+      <span class="pri pri-high">penting</span>
+      <span class="phase-est">~4–5 jam</span>
+      <span class="phase-chev" id="chev-ph4">&#8964;</span>
+    </div>
+    <div class="phase-progress">
+      <div class="phase-bar"><div class="phase-fill" id="fill-ph4" style="width:0%;background:var(--blue)"></div></div>
+      <span class="phase-pct" id="pct-ph4">0%</span>
+    </div>
+  </div>
+  <div class="tasks" id="tasks-ph4" style="display:none">
+    <div class="task" id="t4-1" onclick="check('t4-1','ph4')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Bungkus pipeline jadi fungsi train_predict(df, target_col)</span><span class="tag tcode">kode</span></div><div class="task-note">satu fungsi untuk semua trafo & gardu</div></div></div>
+    <div class="task" id="t4-2" onclick="check('t4-2','ph4')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Loop training TRF1, TRF2, TRF3 — simpan model .pkl</span><span class="tag tmodel">model</span></div></div></div>
+    <div class="task" id="t4-3" onclick="check('t4-3','ph4')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Tabel evaluasi MAE, RMSE, MAPE per trafo</span><span class="tag tout">output</span></div></div></div>
+    <div class="task" id="t4-4" onclick="check('t4-4','ph4')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Export prediksi vs aktual ke Excel (1 sheet per trafo)</span><span class="tag tout">output</span></div></div></div>
+    <div class="task" id="t4-5" onclick="check('t4-5','ph4')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Grafik aktual vs prediksi semua trafo (multi-panel)</span><span class="tag tout">output</span></div></div></div>
+  </div>
+</div>
+
+<div class="phase" id="ph5">
+  <div class="phase-header" onclick="togglePhase('ph5')">
+    <div class="phase-top">
+      <div class="phase-dot" style="background:var(--coral)"></div>
+      <span class="phase-title">Review, tuning & rapikan</span>
+      <span class="phase-date">6 Juni</span>
+      <span class="pri pri-medium">opsional</span>
+      <span class="phase-est">~2–3 jam</span>
+      <span class="phase-chev" id="chev-ph5">&#8964;</span>
+    </div>
+    <div class="phase-progress">
+      <div class="phase-bar"><div class="phase-fill" id="fill-ph5" style="width:0%;background:var(--coral)"></div></div>
+      <span class="phase-pct" id="pct-ph5">0%</span>
+    </div>
+  </div>
+  <div class="tasks" id="tasks-ph5" style="display:none">
+    <div class="task" id="t5-1" onclick="check('t5-1','ph5')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Cek trafo MAPE tertinggi — tuning ringan</span><span class="tag tmodel">model</span></div><div class="task-note">naikkan n_estimators atau kecilkan learning_rate</div></div></div>
+    <div class="task" id="t5-2" onclick="check('t5-2','ph5')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Rapikan notebook & tambah komentar tiap section</span><span class="tag tcode">kode</span></div></div></div>
+    <div class="task" id="t5-3" onclick="check('t5-3','ph5')"><div class="chk"></div><div class="task-body"><div class="task-top"><span class="task-text">Ringkasan hasil: tabel MAPE + grafik terbaik & terburuk</span><span class="tag tout">output</span></div></div></div>
+  </div>
+</div>
+
+<div class="note-box">
+  <strong>Urutan prioritas kalau mepet waktu</strong>
+  Cleaning → Feature engineering → 1 model jalan → Loop semua trafo. Output grafik dan rapikan notebook bisa dikerjakan terakhir.
+</div>
+
+</div>
+<script>
+const STORE='beban_checklist_v3';
+function save(){
+  const s={};
+  document.querySelectorAll('.task').forEach(t=>{s[t.id]=t.querySelector('.chk').classList.contains('checked');});
+  try{localStorage.setItem(STORE,JSON.stringify(s));}catch(e){}
+}
+function load(){
+  try{
+    const s=JSON.parse(localStorage.getItem(STORE)||'{}');
+    Object.keys(s).forEach(id=>{
+      if(s[id]){const t=document.getElementById(id);if(t){t.querySelector('.chk').classList.add('checked');t.classList.add('done');}}
+    });
+    ['ph1','ph2','ph3','ph4','ph5'].forEach(ph=>updatePhase(ph));
+    updateGlobal();
+  }catch(e){}
+}
+function check(taskId,phaseId){
+  const t=document.getElementById(taskId);
+  const c=t.querySelector('.chk');
+  c.classList.toggle('checked');
+  t.classList.toggle('done',c.classList.contains('checked'));
+  updatePhase(phaseId);updateGlobal();save();
+}
+function updatePhase(ph){
+  const tasks=document.querySelectorAll('#tasks-'+ph+' .chk');
+  const total=tasks.length;
+  const done=[...tasks].filter(t=>t.classList.contains('checked')).length;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('fill-'+ph).style.width=pct+'%';
+  document.getElementById('pct-'+ph).textContent=pct+'%';
+}
+function updateGlobal(){
+  const all=document.querySelectorAll('.chk');
+  const total=all.length;
+  const done=[...all].filter(t=>t.classList.contains('checked')).length;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('overall-pct').textContent=pct+'%';
+  document.getElementById('overall-fill').style.width=pct+'%';
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-left').textContent=total-done;
+}
+function togglePhase(ph){
+  const t=document.getElementById('tasks-'+ph);
+  const c=document.getElementById('chev-'+ph);
+  const open=t.style.display!=='none';
+  t.style.display=open?'none':'block';
+  c.classList.toggle('open',!open);
+}
+load();
+</script>
+</body>
+</html>
